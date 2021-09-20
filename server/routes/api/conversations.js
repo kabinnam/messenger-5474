@@ -1,5 +1,5 @@
 const router = require("express").Router();
-const { User, Conversation, Message } = require("../../db/models");
+const { User, Conversation, Message, Read } = require("../../db/models");
 const { Op } = require("sequelize");
 const onlineUsers = require("../../onlineUsers");
 
@@ -27,6 +27,15 @@ router.get("/", async (req, res, next) => {
           as: "messages",
           separate: true,
           order: [["createdAt", "ASC"]],
+        },
+        {
+          model: Read,
+          attributes: ["id", "conversationId", "userId", "lastReadIndex"],
+          where: {
+            userId: {
+              [Op.eq]: userId,
+            },
+          },
         },
         {
           model: User,
@@ -80,6 +89,24 @@ router.get("/", async (req, res, next) => {
     }
 
     res.json(conversations);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// update converstaion for user, to mark read
+router.post("/read", async (req, res, next) => {
+  try {
+    if (!req.body) {
+      return res.sendStatus(400);
+    }
+
+    const read = await Read.update(
+      { lastReadIndex: req.body.lastReadIndex },
+      { where: { id: req.body.id } }
+    );
+
+    res.json(read);
   } catch (error) {
     next(error);
   }

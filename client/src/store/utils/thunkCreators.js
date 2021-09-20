@@ -5,6 +5,7 @@ import {
   addConversation,
   setNewMessage,
   setSearchedUsers,
+  updateReadMessage,
 } from "../conversations";
 import { gotUser, setFetchingStatus } from "../user";
 
@@ -101,6 +102,14 @@ export const postMessage = (body) => async (dispatch) => {
       dispatch(addConversation(body.recipientId, data.message));
     } else {
       dispatch(setNewMessage(data.message));
+
+      const newReads = {
+        ...body.read,
+        lastReadIndex: body.read.lastReadIndex + 1,
+      };
+
+      await axios.post("/api/conversations/read", newReads);
+      dispatch(updateReadMessage(newReads));
     }
 
     sendMessage(data, body);
@@ -113,6 +122,20 @@ export const searchUsers = (searchTerm) => async (dispatch) => {
   try {
     const { data } = await axios.get(`/api/users/${searchTerm}`);
     dispatch(setSearchedUsers(data));
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+export const updateConversationReads = (conversation) => async (dispatch) => {
+  try {
+    const reads = {
+      ...conversation.reads[0],
+      lastReadIndex: conversation.messages.length - 1,
+    };
+
+    await axios.post("/api/conversations/read", reads);
+    dispatch(updateReadMessage(reads));
   } catch (error) {
     console.error(error);
   }

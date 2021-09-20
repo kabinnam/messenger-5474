@@ -2,6 +2,7 @@ const db = require("./db");
 const { User } = require("./models");
 const Conversation = require("./models/conversation");
 const Message = require("./models/message");
+const Read = require("./models/read");
 
 async function seed() {
   await db.sync({ force: true });
@@ -23,25 +24,35 @@ async function seed() {
       "https://res.cloudinary.com/dmlvthmqr/image/upload/v1607914466/messenger/775db5e79c5294846949f1f55059b53317f51e30_s3back.png",
   });
 
-  const santaigoConvo = await Conversation.create({
+  const santiagoConvo = await Conversation.create({
     user1Id: thomas.id,
     user2Id: santiago.id,
   });
 
   await Message.create({
-    conversationId: santaigoConvo.id,
+    conversationId: santiagoConvo.id,
     senderId: santiago.id,
     text: "Where are you from?",
   });
   await Message.create({
-    conversationId: santaigoConvo.id,
+    conversationId: santiagoConvo.id,
     senderId: thomas.id,
     text: "I'm from New York",
   });
   await Message.create({
-    conversationId: santaigoConvo.id,
+    conversationId: santiagoConvo.id,
     senderId: santiago.id,
     text: "Share photo of your city, please",
+  });
+  await Read.create({
+    conversationId: santiagoConvo.id,
+    userId: thomas.id,
+    lastReadIndex: 1,
+  });
+  await Read.create({
+    conversationId: santiagoConvo.id,
+    userId: santiago.id,
+    lastReadIndex: 2,
   });
 
   const chiumbo = await User.create({
@@ -59,6 +70,16 @@ async function seed() {
     conversationId: chiumboConvo.id,
     senderId: chiumbo.id,
     text: "Sure! What time?",
+  });
+  await Read.create({
+    conversationId: chiumboConvo.id,
+    userId: thomas.id,
+    lastReadIndex: null,
+  });
+  await Read.create({
+    conversationId: chiumboConvo.id,
+    userId: chiumbo.id,
+    lastReadIndex: 0,
   });
 
   const hualing = await User.create({
@@ -85,6 +106,16 @@ async function seed() {
     conversationId: hualingConvo.id,
     senderId: hualing.id,
     text: "😂 😂 😂",
+  });
+  await Read.create({
+    conversationId: hualingConvo.id,
+    userId: thomas.id,
+    lastReadIndex: null,
+  });
+  await Read.create({
+    conversationId: hualingConvo.id,
+    userId: hualing.id,
+    lastReadIndex: 11,
   });
 
   const otherUsers = await Promise.all([
