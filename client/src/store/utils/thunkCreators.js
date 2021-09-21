@@ -5,7 +5,7 @@ import {
   addConversation,
   setNewMessage,
   setSearchedUsers,
-  updateReadMessage,
+  updateReadMessages,
 } from "../conversations";
 import { gotUser, setFetchingStatus } from "../user";
 
@@ -102,14 +102,6 @@ export const postMessage = (body) => async (dispatch) => {
       dispatch(addConversation(body.recipientId, data.message));
     } else {
       dispatch(setNewMessage(data.message));
-
-      const newReads = {
-        ...body.read,
-        lastReadIndex: body.read.lastReadIndex + 1,
-      };
-
-      await axios.post("/api/conversations/read", newReads);
-      dispatch(updateReadMessage(newReads));
     }
 
     sendMessage(data, body);
@@ -127,16 +119,30 @@ export const searchUsers = (searchTerm) => async (dispatch) => {
   }
 };
 
-export const updateConversationReads = (conversation) => async (dispatch) => {
-  try {
-    const reads = {
-      ...conversation.reads[0],
-      lastReadIndex: conversation.messages.length - 1,
-    };
-
-    await axios.post("/api/conversations/read", reads);
-    dispatch(updateReadMessage(reads));
-  } catch (error) {
-    console.error(error);
-  }
+const broadcastActiveConversation = (
+  conversation,
+  userId,
+  activeConversation
+) => {
+  socket.emit("set-active-conversation", {
+    conversation,
+    userId,
+    activeConversation,
+  });
 };
+
+export const updateConversationReads =
+  (activeConversation, conversation, user) => async (dispatch) => {
+    try {
+      const body = {
+        userId: user.id,
+        conversationId: conversation.id,
+      };
+      await axios.put("/api/messages/read", body);
+      dispatch(updateReadMessages(conversation, user.id));
+
+      broadcastActiveConversation(conversation, user.id, activeConversation);
+    } catch (error) {
+      console.error(error);
+    }
+  };

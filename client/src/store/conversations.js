@@ -69,10 +69,10 @@ export const addConversation = (recipientId, newMessage) => {
   };
 };
 
-export const updateReadMessage = (reads) => {
+export const updateReadMessages = (conversation, userId) => {
   return {
     type: UPDATE_READ,
-    payload: reads,
+    payload: { conversation, userId },
   };
 };
 
@@ -80,8 +80,6 @@ export const updateReadMessage = (reads) => {
 
 const reducer = (state = [], action) => {
   switch (action.type) {
-    case UPDATE_READ:
-      return updateReadToStore(state, action.payload);
     case GET_CONVERSATIONS:
       return action.conversations;
     case SET_MESSAGE:
@@ -101,6 +99,12 @@ const reducer = (state = [], action) => {
         state,
         action.payload.recipientId,
         action.payload.newMessage
+      );
+    case UPDATE_READ:
+      return updateReadToStore(
+        state,
+        action.payload.conversation,
+        action.payload.userId
       );
     default:
       return state;

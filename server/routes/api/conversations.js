@@ -1,7 +1,7 @@
 const router = require("express").Router();
-const { User, Conversation, Message, Read } = require("../../db/models");
-const { Op } = require("sequelize");
-const onlineUsers = require("../../onlineUsers");
+const { User, Conversation, Message } = require("../../db/models");
+const { Op, fn, col } = require("sequelize");
+const { onlineUsers } = require("../../onlineUsers");
 
 // get all conversations for a user, include latest message text for preview, and all messages
 // include other user model so we have info on username/profile pic (don't include current user info)
@@ -29,15 +29,6 @@ router.get("/", async (req, res, next) => {
           order: [["createdAt", "ASC"]],
         },
         {
-          model: Read,
-          attributes: ["id", "conversationId", "userId", "lastReadIndex"],
-          where: {
-            userId: {
-              [Op.eq]: userId,
-            },
-          },
-        },
-        {
           model: User,
           as: "user1",
           where: {
@@ -60,6 +51,28 @@ router.get("/", async (req, res, next) => {
           required: false,
         },
       ],
+    });
+
+    // There must be a way to get this query integrated with original conversation query above
+    const unread = await Message.findAll({
+      attributes: ["conversationId", [fn("COUNT", col("id")), "numUnread"]],
+      group: ["conversationId"],
+      where: {
+        [Op.and]: {
+          senderId: {
+            [Op.not]: userId,
+          },
+          read: {
+            [Op.eq]: false,
+          },
+        },
+      },
+    });
+
+    let newUnread = {};
+    unread.forEach((u) => {
+      const { conversationId, numUnread } = u.dataValues;
+      newUnread[conversationId] = parseInt(numUnread);
     });
 
     for (let i = 0; i < conversations.length; i++) {
@@ -85,28 +98,12 @@ router.get("/", async (req, res, next) => {
       // set properties for notification count and latest message preview
       const lastMessageIndex = convoJSON.messages.length - 1;
       convoJSON.latestMessageText = convoJSON.messages[lastMessageIndex].text;
+
+      convoJSON.numUnread = newUnread[convoJSON.id];
       conversations[i] = convoJSON;
     }
 
     res.json(conversations);
-  } catch (error) {
-    next(error);
-  }
-});
-
-// update converstaion for user, to mark read
-router.post("/read", async (req, res, next) => {
-  try {
-    if (!req.body) {
-      return res.sendStatus(400);
-    }
-
-    const read = await Read.update(
-      { lastReadIndex: req.body.lastReadIndex },
-      { where: { id: req.body.id } }
-    );
-
-    res.json(read);
   } catch (error) {
     next(error);
   }

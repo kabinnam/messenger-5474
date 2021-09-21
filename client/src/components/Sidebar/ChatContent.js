@@ -19,7 +19,11 @@ const useStyles = makeStyles((theme) => ({
     color: "#9CADC8",
     letterSpacing: -0.17,
   },
-  unread: {
+  unreadMessage: {
+    fontWeight: "bold",
+    color: "black",
+  },
+  unreadCount: {
     alignSelf: "center",
   },
 }));
@@ -28,12 +32,7 @@ const ChatContent = (props) => {
   const classes = useStyles();
 
   const { conversation } = props;
-  const { latestMessageText, otherUser, messages, reads } = conversation;
-
-  const numUnread =
-    reads[0].lastReadIndex !== null
-      ? messages.length - 1 - reads[0].lastReadIndex
-      : messages.length;
+  const { latestMessageText, otherUser, numUnread } = conversation;
 
   return (
     <Box className={classes.root}>
@@ -41,13 +40,17 @@ const ChatContent = (props) => {
         <Typography className={classes.username}>
           {otherUser.username}
         </Typography>
-        <Typography className={classes.previewText}>
+        <Typography
+          className={
+            classes.previewText + " " + (numUnread > 0 && classes.unreadMessage)
+          }
+        >
           {latestMessageText}
         </Typography>
       </Box>
       {numUnread > 0 && (
         <Chip
-          className={classes.unread}
+          className={classes.unreadCount}
           color="primary"
           size="small"
           label={numUnread}

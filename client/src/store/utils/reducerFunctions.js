@@ -81,11 +81,30 @@ export const addNewConvoToStore = (state, recipientId, message) => {
   });
 };
 
-export const updateReadToStore = (state, reads) => {
+export const updateReadToStore = (state, conversation, userId) => {
   return state.map((convo) => {
-    if (convo.id === reads.conversationId) {
+    if (convo.id === conversation.id && userId !== conversation.otherUser.id) {
       const convoCopy = { ...convo };
-      convoCopy.reads = [reads];
+      let haveRead = false;
+
+      convoCopy.messages = convo.messages.map((message) => {
+        if (message.senderId !== userId) {
+          if (!haveRead) {
+            haveRead = true;
+          }
+
+          return {
+            ...message,
+            read: true,
+          };
+        } else {
+          return message;
+        }
+      });
+
+      if (haveRead) {
+        convoCopy.numUnread = 0;
+      }
       return convoCopy;
     } else {
       return convo;

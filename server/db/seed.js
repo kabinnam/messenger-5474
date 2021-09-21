@@ -2,7 +2,6 @@ const db = require("./db");
 const { User } = require("./models");
 const Conversation = require("./models/conversation");
 const Message = require("./models/message");
-const Read = require("./models/read");
 
 async function seed() {
   await db.sync({ force: true });
@@ -33,26 +32,19 @@ async function seed() {
     conversationId: santiagoConvo.id,
     senderId: santiago.id,
     text: "Where are you from?",
+    read: true,
   });
   await Message.create({
     conversationId: santiagoConvo.id,
     senderId: thomas.id,
     text: "I'm from New York",
+    read: true,
   });
   await Message.create({
     conversationId: santiagoConvo.id,
     senderId: santiago.id,
     text: "Share photo of your city, please",
-  });
-  await Read.create({
-    conversationId: santiagoConvo.id,
-    userId: thomas.id,
-    lastReadIndex: 1,
-  });
-  await Read.create({
-    conversationId: santiagoConvo.id,
-    userId: santiago.id,
-    lastReadIndex: 2,
+    read: false,
   });
 
   const chiumbo = await User.create({
@@ -70,16 +62,7 @@ async function seed() {
     conversationId: chiumboConvo.id,
     senderId: chiumbo.id,
     text: "Sure! What time?",
-  });
-  await Read.create({
-    conversationId: chiumboConvo.id,
-    userId: thomas.id,
-    lastReadIndex: null,
-  });
-  await Read.create({
-    conversationId: chiumboConvo.id,
-    userId: chiumbo.id,
-    lastReadIndex: 0,
+    read: false,
   });
 
   const hualing = await User.create({
@@ -99,6 +82,7 @@ async function seed() {
       conversationId: hualingConvo.id,
       senderId: hualing.id,
       text: "a test message",
+      read: false,
     });
   }
 
@@ -106,16 +90,7 @@ async function seed() {
     conversationId: hualingConvo.id,
     senderId: hualing.id,
     text: "😂 😂 😂",
-  });
-  await Read.create({
-    conversationId: hualingConvo.id,
-    userId: thomas.id,
-    lastReadIndex: null,
-  });
-  await Read.create({
-    conversationId: hualingConvo.id,
-    userId: hualing.id,
-    lastReadIndex: 11,
+    read: false,
   });
 
   const otherUsers = await Promise.all([
