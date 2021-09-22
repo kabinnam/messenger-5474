@@ -4,15 +4,7 @@ import { SenderBubble, OtherUserBubble } from "../ActiveChat";
 import moment from "moment";
 
 const Messages = (props) => {
-  const { messages, otherUser, userId } = props;
-
-  let lastReadId = -1;
-  for (let i = messages.length - 1; i >= 0; i--) {
-    if (messages[i].senderId === userId && messages[i].read) {
-      lastReadId = messages[i].id;
-      break;
-    }
-  }
+  const { messages, otherUser, userId, lastReadId } = props;
 
   return (
     <Box>

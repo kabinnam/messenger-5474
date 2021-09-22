@@ -64,6 +64,10 @@ router.put("/read", async (req, res, next) => {
 
     const { userId, conversationId } = req.body;
 
+    if (req.user.id !== userId) {
+      return res.sendStatus(401);
+    }
+
     const readMessages = await Message.update(
       { read: true },
       {

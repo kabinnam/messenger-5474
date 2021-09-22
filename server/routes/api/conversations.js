@@ -53,28 +53,6 @@ router.get("/", async (req, res, next) => {
       ],
     });
 
-    // There must be a way to get this query integrated with original conversation query above
-    const unread = await Message.findAll({
-      attributes: ["conversationId", [fn("COUNT", col("id")), "numUnread"]],
-      group: ["conversationId"],
-      where: {
-        [Op.and]: {
-          senderId: {
-            [Op.not]: userId,
-          },
-          read: {
-            [Op.eq]: false,
-          },
-        },
-      },
-    });
-
-    let newUnread = {};
-    unread.forEach((u) => {
-      const { conversationId, numUnread } = u.dataValues;
-      newUnread[conversationId] = parseInt(numUnread);
-    });
-
     for (let i = 0; i < conversations.length; i++) {
       const convo = conversations[i];
       const convoJSON = convo.toJSON();
@@ -99,7 +77,44 @@ router.get("/", async (req, res, next) => {
       const lastMessageIndex = convoJSON.messages.length - 1;
       convoJSON.latestMessageText = convoJSON.messages[lastMessageIndex].text;
 
-      convoJSON.numUnread = newUnread[convoJSON.id];
+      const unread = await Message.count({
+        where: {
+          [Op.and]: {
+            conversationId: {
+              [Op.eq]: convoJSON.id,
+            },
+            senderId: {
+              [Op.not]: userId,
+            },
+            read: {
+              [Op.eq]: false,
+            },
+          },
+        },
+      });
+      convoJSON.numUnread = unread;
+
+      const messageWithLastReadId = await Message.findOne({
+        attributes: [["id", "lastReadId"]],
+        order: [["createdAt", "DESC"]],
+        where: {
+          [Op.and]: {
+            conversationId: {
+              [Op.eq]: convoJSON.id,
+            },
+            senderId: {
+              [Op.eq]: userId,
+            },
+            read: {
+              [Op.eq]: true,
+            },
+          },
+        },
+      });
+
+      convoJSON.lastReadId =
+        messageWithLastReadId && messageWithLastReadId.toJSON().lastReadId;
+
       conversations[i] = convoJSON;
     }
 
