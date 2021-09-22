@@ -1,2 +1,3 @@
 const onlineUsers = [];
-module.exports = onlineUsers;
+const userActiveConversations = {};
+module.exports = { onlineUsers, userActiveConversations };

@@ -1,7 +1,7 @@
 const router = require("express").Router();
 const { User, Conversation, Message } = require("../../db/models");
-const { Op } = require("sequelize");
-const onlineUsers = require("../../onlineUsers");
+const { Op, fn, col } = require("sequelize");
+const { onlineUsers } = require("../../onlineUsers");
 
 // get all conversations for a user, include latest message text for preview, and all messages
 // include other user model so we have info on username/profile pic (don't include current user info)
@@ -76,6 +76,45 @@ router.get("/", async (req, res, next) => {
       // set properties for notification count and latest message preview
       const lastMessageIndex = convoJSON.messages.length - 1;
       convoJSON.latestMessageText = convoJSON.messages[lastMessageIndex].text;
+
+      const unread = await Message.count({
+        where: {
+          [Op.and]: {
+            conversationId: {
+              [Op.eq]: convoJSON.id,
+            },
+            senderId: {
+              [Op.not]: userId,
+            },
+            read: {
+              [Op.eq]: false,
+            },
+          },
+        },
+      });
+      convoJSON.numUnread = unread;
+
+      const messageWithLastReadId = await Message.findOne({
+        attributes: [["id", "lastReadId"]],
+        order: [["createdAt", "DESC"]],
+        where: {
+          [Op.and]: {
+            conversationId: {
+              [Op.eq]: convoJSON.id,
+            },
+            senderId: {
+              [Op.eq]: userId,
+            },
+            read: {
+              [Op.eq]: true,
+            },
+          },
+        },
+      });
+
+      convoJSON.lastReadId =
+        messageWithLastReadId && messageWithLastReadId.toJSON().lastReadId;
+
       conversations[i] = convoJSON;
     }
 
